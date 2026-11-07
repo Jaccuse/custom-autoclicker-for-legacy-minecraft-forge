@@ -36,6 +36,10 @@ The jar is written to `build/libs/AutoClicker-<version>.jar`. Drop it into your 
 
 `gradlew.bat` automatically uses `C:\Program Files\Java\jdk1.8.0_181` when it exists. Otherwise, point `JAVA_HOME` at a JDK 8 before building.
 
+## History
+
+This mod was originally written without AI assistance. It was later updated, cleaned up and published to GitHub with the help of [Claude](https://claude.com/claude-code).
+
 ## License
 
 [MIT](LICENSE). Minecraft Forge itself is licensed separately and is not included in this repository.
