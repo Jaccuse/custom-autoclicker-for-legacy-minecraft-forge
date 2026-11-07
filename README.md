@@ -35,3 +35,7 @@ gradlew.bat build
 The jar is written to `build/libs/AutoClicker-<version>.jar`. Drop it into your `.minecraft/mods` folder alongside Forge 1.8.9 (11.15.1.2318).
 
 `gradlew.bat` automatically uses `C:\Program Files\Java\jdk1.8.0_181` when it exists. Otherwise, point `JAVA_HOME` at a JDK 8 before building.
+
+## License
+
+The mod's own code is under the [MIT License](LICENSE). The `*-fml.txt`, `MinecraftForge-*.txt` and `Paulscode*.txt` files are the licenses of Forge and its bundled libraries, included with the Forge MDK.
