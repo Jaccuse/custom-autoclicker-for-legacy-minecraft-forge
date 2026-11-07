@@ -13,117 +13,73 @@ import net.minecraftforge.fml.common.gameevent.InputEvent;
 
 public class KeyBindHandler {
 
-    private static KeyBinding toggleKeyBind;
-    private static KeyBinding placeBlockKeyBind;
+    private static final String CATEGORY = "AutoClicker";
 
-    private static final ClickHandler clickHandler = new ClickHandler();
-    private static final BlockPlaceHandler blockPlaceHandler = new BlockPlaceHandler();
+    private final KeyBinding clickKey = new KeyBinding("Toggle AutoClicker", AutoClickerConfig.getToggleKey(), CATEGORY);
+    private final KeyBinding placeKey = new KeyBinding("Toggle AutoPlacer", AutoClickerConfig.getPlaceBlockKey(), CATEGORY);
 
-    public static void register() {
-        toggleKeyBind = new KeyBinding(
-                "Toggle AutoClicker",
-                AutoClickerConfig.getToggleKey(),
-                "AutoClicker"
-        );
+    private final ClickHandler clicker;
+    private final BlockPlaceHandler placer;
 
-        placeBlockKeyBind = new KeyBinding(
-                "Toggle AutoPlacer",
-                AutoClickerConfig.getPlaceBlockKey(),
-                "AutoClicker"
-        );
-
-        ClientRegistry.registerKeyBinding(toggleKeyBind);
-        ClientRegistry.registerKeyBinding(placeBlockKeyBind);
+    public KeyBindHandler(ClickHandler clicker, BlockPlaceHandler placer) {
+        this.clicker = clicker;
+        this.placer = placer;
+        ClientRegistry.registerKeyBinding(clickKey);
+        ClientRegistry.registerKeyBinding(placeKey);
     }
 
     @SubscribeEvent
     public void onKeyInput(InputEvent.KeyInputEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
 
-        if (toggleKeyBind.isPressed()) {
-            clickHandler.toggle();
-
-            String status = clickHandler.isEnabled()
-                    ? EnumChatFormatting.GREEN + "ON"
-                    : EnumChatFormatting.RED + "OFF";
-
-            float cps = 1000.0f / AutoClickerConfig.getClickIntervalMs();
-
-            String msg = EnumChatFormatting.GOLD + "[AutoClicker] "
-                    + EnumChatFormatting.WHITE + "Toggled "
-                    + status
-                    + EnumChatFormatting.GRAY + " | "
-                    + EnumChatFormatting.WHITE + "Interval: "
-                    + AutoClickerConfig.getClickIntervalMs() + "ms"
-                    + EnumChatFormatting.GRAY + " (~"
-                    + String.format("%.1f", cps) + " CPS)"
-                    + getTimeoutChatSuffix();
-
-            sendChat(mc, msg);
+        // Key presses are counted even while a GUI (chat, inventory, menus) is open or no world is loaded.
+        // Discard those so typing a "c" in chat doesn't toggle anything.
+        if (mc.thePlayer == null || mc.currentScreen != null) {
+            while (clickKey.isPressed() || placeKey.isPressed()) {
+                // drain
+            }
+            return;
         }
 
-        if (placeBlockKeyBind.isPressed()) {
-            blockPlaceHandler.toggle();
+        if (clickKey.isPressed()) {
+            clicker.toggle();
+            send(mc, status("AutoClicker", clicker.isEnabled(), AutoClickerConfig.getClickIntervalMs(), "CPS"));
+        }
 
-            String status = blockPlaceHandler.isEnabled()
-                    ? EnumChatFormatting.GREEN + "ON"
-                    : EnumChatFormatting.RED + "OFF";
+        if (placeKey.isPressed()) {
+            placer.toggle();
+            String msg = status("AutoPlacer", placer.isEnabled(), AutoClickerConfig.getPlaceIntervalMs(), "attempts/sec");
 
-            float aps = 1000.0f / AutoClickerConfig.getPlaceIntervalMs();
-
-            String msg = EnumChatFormatting.GOLD + "[AutoPlacer] "
-                    + EnumChatFormatting.WHITE + "Toggled "
-                    + status
-                    + EnumChatFormatting.GRAY + " | "
-                    + EnumChatFormatting.WHITE + "Interval: "
-                    + AutoClickerConfig.getPlaceIntervalMs() + "ms"
-                    + EnumChatFormatting.GRAY + " (~"
-                    + String.format("%.1f", aps) + " attempts/sec)"
-                    + getTimeoutChatSuffix();
-
-            if (blockPlaceHandler.isEnabled()) {
-                BlockPlaceHandler.PlaceResult result = blockPlaceHandler.placeOnceNow();
-
-                msg += EnumChatFormatting.GRAY + " | "
-                        + EnumChatFormatting.WHITE + "First attempt: "
-                        + formatPlaceResult(result);
+            if (placer.isEnabled()) {
+                BlockPlaceHandler.PlaceResult result = placer.placeOnceNow();
+                EnumChatFormatting color = result == BlockPlaceHandler.PlaceResult.SUCCESS
+                        ? EnumChatFormatting.GREEN
+                        : EnumChatFormatting.RED;
+                msg += separator() + "First attempt: " + color + result.name();
             }
 
-            sendChat(mc, msg);
+            send(mc, msg);
         }
     }
 
-    private String formatPlaceResult(BlockPlaceHandler.PlaceResult result) {
-        if (result == BlockPlaceHandler.PlaceResult.SUCCESS) {
-            return EnumChatFormatting.GREEN + "SUCCESS";
-        }
+    private static String status(String name, boolean enabled, int intervalMs, String rateUnit) {
+        String state = enabled ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF";
+        String timeout = AutoClickerConfig.isTimeoutEnabled()
+                ? EnumChatFormatting.GREEN + "" + AutoClickerConfig.getTimeoutMinutes() + "m"
+                : EnumChatFormatting.RED + "OFF";
 
-        return EnumChatFormatting.RED + result.name();
+        return EnumChatFormatting.GOLD + "[" + name + "] "
+                + EnumChatFormatting.WHITE + "Toggled " + state
+                + separator() + "Interval: " + intervalMs + "ms"
+                + EnumChatFormatting.GRAY + String.format(" (~%.1f %s)", 1000.0f / intervalMs, rateUnit)
+                + separator() + "Timeout: " + timeout;
     }
 
-    private String getTimeoutChatSuffix() {
-        if (!AutoClickerConfig.isTimeoutEnabled()) {
-            return EnumChatFormatting.GRAY + " | "
-                    + EnumChatFormatting.WHITE + "Timeout: "
-                    + EnumChatFormatting.RED + "OFF";
-        }
-
-        return EnumChatFormatting.GRAY + " | "
-                + EnumChatFormatting.WHITE + "Timeout: "
-                + EnumChatFormatting.GREEN + AutoClickerConfig.getTimeoutMinutes() + "m";
+    private static String separator() {
+        return EnumChatFormatting.GRAY + " | " + EnumChatFormatting.WHITE;
     }
 
-    private void sendChat(Minecraft mc, String msg) {
-        if (mc != null && mc.thePlayer != null) {
-            mc.thePlayer.addChatMessage(new ChatComponentText(msg));
-        }
-    }
-
-    public static ClickHandler getClickHandler() {
-        return clickHandler;
-    }
-
-    public static BlockPlaceHandler getBlockPlaceHandler() {
-        return blockPlaceHandler;
+    private static void send(Minecraft mc, String msg) {
+        mc.thePlayer.addChatMessage(new ChatComponentText(msg));
     }
 }

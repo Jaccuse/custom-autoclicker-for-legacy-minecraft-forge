@@ -3,94 +3,35 @@ package com.autoclicker.handler;
 import com.autoclicker.config.AutoClickerConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.BlockPos;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 
-public class ClickHandler {
+/** Repeated left click: attacks the targeted entity or hits the targeted block. */
+public class ClickHandler extends RepeatingAction {
 
-    private boolean enabled = false;
-    private long lastClickTime = 0L;
-    private long enabledAtTime = 0L;
-
-    @SubscribeEvent
-    public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) {
-            return;
-        }
-
-        Minecraft mc = Minecraft.getMinecraft();
-
-        if (mc == null || mc.thePlayer == null || mc.theWorld == null || mc.playerController == null) {
-            return;
-        }
-
-        if (mc.currentScreen != null) {
-            return;
-        }
-
-        if (!enabled) {
-            return;
-        }
-
-        if (hasTimedOut()) {
-            setEnabled(false);
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        int interval = AutoClickerConfig.getClickIntervalMs();
-
-        if (now - lastClickTime >= interval) {
-            lastClickTime = now;
-            performLeftClick(mc);
-        }
+    @Override
+    protected int getIntervalMs() {
+        return AutoClickerConfig.getClickIntervalMs();
     }
 
-    private void performLeftClick(Minecraft mc) {
-        MovingObjectPosition mop = mc.objectMouseOver;
+    @Override
+    protected void run(Minecraft mc) {
+        // Same order as vanilla Minecraft#clickMouse: swing first, then act on the target.
+        mc.thePlayer.swingItem();
 
-        if (mop != null) {
-            if (mop.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY) {
-                if (mop.entityHit != null) {
-                    mc.playerController.attackEntity(mc.thePlayer, mop.entityHit);
-                }
-            } else if (mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
-                BlockPos pos = mop.getBlockPos();
-                EnumFacing side = mop.sideHit;
+        MovingObjectPosition target = mc.objectMouseOver;
 
-                if (pos != null && side != null && !mc.theWorld.isAirBlock(pos)) {
-                    mc.playerController.clickBlock(pos, side);
-                }
+        if (target == null) {
+            return;
+        }
+
+        if (target.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY) {
+            mc.playerController.attackEntity(mc.thePlayer, target.entityHit);
+        } else if (target.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+            BlockPos pos = target.getBlockPos();
+
+            if (!mc.theWorld.isAirBlock(pos)) {
+                mc.playerController.clickBlock(pos, target.sideHit);
             }
         }
-
-        mc.thePlayer.swingItem();
-    }
-
-    private boolean hasTimedOut() {
-        if (!AutoClickerConfig.isTimeoutEnabled()) {
-            return false;
-        }
-
-        long now = System.currentTimeMillis();
-        long timeoutMs = AutoClickerConfig.getTimeoutDurationMs();
-
-        return enabledAtTime > 0L && now - enabledAtTime >= timeoutMs;
-    }
-
-    public void toggle() {
-        setEnabled(!enabled);
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean state) {
-        enabled = state;
-        lastClickTime = 0L;
-        enabledAtTime = state ? System.currentTimeMillis() : 0L;
     }
 }

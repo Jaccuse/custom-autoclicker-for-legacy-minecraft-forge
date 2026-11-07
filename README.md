@@ -15,14 +15,14 @@ Settings live in `config/autoclicker.cfg` and are created on first launch:
 
 | Key | Default | Range | Notes |
 | --- | --- | --- | --- |
-| `toggleKey` | 46 (C) | 1–255 | LWJGL key code; restart required |
-| `placeBlockKey` | 47 (V) | 1–255 | LWJGL key code; restart required |
+| `toggleKey` | 46 (C) | 1–255 | Default LWJGL key code; restart required |
+| `placeBlockKey` | 47 (V) | 1–255 | Default LWJGL key code; restart required |
 | `clickIntervalMs` | 500 | 50–60000 | 500 ms ≈ 2 clicks/sec |
 | `placeIntervalMs` | 250 | 50–60000 | 250 ms ≈ 4 attempts/sec |
 | `timeoutEnabled` | false | | Auto-off after `timeoutMinutes` |
 | `timeoutMinutes` | 30 | 1–1440 | Separate timer per feature |
 
-You can also rebind both keys in-game under **Controls → AutoClicker**.
+You can also rebind both keys in-game under **Controls → AutoClicker**. A key set there takes priority over the config values.
 
 ## Building
 
@@ -38,4 +38,4 @@ The jar is written to `build/libs/AutoClicker-<version>.jar`. Drop it into your 
 
 ## License
 
-The mod's own code is under the [MIT License](LICENSE). The `*-fml.txt`, `MinecraftForge-*.txt` and `Paulscode*.txt` files are the licenses of Forge and its bundled libraries, included with the Forge MDK.
+[MIT](LICENSE). Minecraft Forge itself is licensed separately and is not included in this repository.
