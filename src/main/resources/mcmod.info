@@ -1,0 +1,15 @@
+[
+  {
+    "modid": "autoclicker",
+    "name": "AutoClicker",
+    "description": "Configurable Minecraft 1.8.9 Forge auto-clicker and auto-placer using public Minecraft controller APIs. Config file: config/autoclicker.cfg. Parameters: toggleKey integer LWJGL keycode, default 46/C; placeBlockKey integer LWJGL keycode, default 47/V; clickIntervalMs integer 50-60000, default 500; placeIntervalMs integer 50-60000, default 250; timeoutEnabled boolean, default false; timeoutMinutes integer 1-1440, default 30. Auto-placer works with blocks and right-click-on-block items such as seeds when vanilla placement rules allow it.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "authorList": ["jack"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
